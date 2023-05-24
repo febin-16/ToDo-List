@@ -1,4 +1,6 @@
-import React,{useState} from 'react';
+import React,{useState,useEffect} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DrawerNavigation from '../navigation/DrawerNavigation';
 import {
   SafeAreaView,
   ScrollView,
@@ -18,24 +20,28 @@ type ItemProps = {task: string};
 const Item = ({task,index,navigation}: ItemProps) => {
   const [color,setColor] = useState('Incomplete');
   const [status,setStatus] = useState('lightblue');
+  const handleEvent= async ()=>{
+    setColor((color)=>{
+      if(color==('lightblue'))
+      {
+      setStatus('Complete')      
+      return 'lightgreen'
+      }  
+      else
+      {
+      setStatus('Incomplete')      
+      return 'lightblue'  
+      }  
+      })
+  }
   return(
-    
-    <View style={{display:'flex',flexDirection:'row'}}>
-      <TouchableOpacity onPress={() => navigation.navigate('Input',[task,])} style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',backgroundColor:'lightblue',borderRadius:10,marginBottom:10,width:250}}>
-        <Text style={{fontSize:30}}>{task}</Text>  
-        </TouchableOpacity >
-        <TouchableOpacity onPress={()=>{setColor((color)=>{
-            if(color==('lightblue'))
-            {
-            setStatus('Complete')      
-            return 'lightgreen'
-            }  
-            else
-            {
-            setStatus('Incomplete')      
-            return 'lightblue'  
-            }  
-            })}}>
+    <View>
+    {task["task"]&&<View style={{display:'flex',flexDirection:'row'}}>
+
+      <TouchableOpacity onPress={() => navigation.navigate('Details',[task])} style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',backgroundColor:'lightblue',borderRadius:10,marginBottom:10,width:250}}>
+        <Text style={{fontSize:30}}>{task["task"]}</Text>  
+      </TouchableOpacity >
+        <TouchableOpacity onPress={handleEvent}>
             {
 
             status.localeCompare('Complete')?
@@ -44,31 +50,36 @@ const Item = ({task,index,navigation}: ItemProps) => {
                 <Icon style={{paddingLeft:20}} name="check" size={60} color="lightgreen" />    
             }
         </TouchableOpacity>
+    </View>}
     </View>
   );
   };
-
 function Home({navigation}): JSX.Element {
-  const [list,addList] = useState([]);
-  const [input,setInput] = useState(null);
-  const [deadline,setDeadline] = useState(null);
-  const handleInputChange = (text) => {
-    setInput(text);
-  };
-  const handleDeadlineChange = (text) => {
-    setDeadline(text);
-  };
+  const [list,addList] = useState([{}]);
+  useEffect(()=>{
+    async function fetchData(){
+      try{
+        const jsondata =  await AsyncStorage.getItem('list');
+        let data=[]
+        if(jsondata!=null)
+        {
+          data = JSON.parse(jsondata);
+          addList(data); 
+        } 
+      }
+      catch(error)
+      {
+        console.error(error);
+      }
+    }
+    fetchData();
+  },[list])
   return (
     <View style={styles.container}>
        <LinearGradient colors={['#CDB4DB', 'lightblue']} style={styles.gradient}>
           <Text style={{fontSize:30,paddingTop:10,textAlign:'center',paddingBottom:10}}>ToDo List</Text>
-          <View>
-            <Text>ENTER THE TASK</Text>
-            <TextInput style={{width:300,height:50,backgroundColor:'white',borderColor:'white',borderWidth:2,borderRadius:10,marginVertical:10}} onChangeText={handleInputChange}></TextInput> 
-            <Text>ENTER THE DEADLINE</Text>
-            <TextInput style={{width:300,height:50,backgroundColor:'white',borderColor:'white',borderWidth:2,borderRadius:10,marginVertical:10}} onChangeText={handleDeadlineChange}></TextInput>
-          </View>
-          <View style={{width:350,height:390,borderWidth:2,borderRadius:10,marginTop:10,display:'flex'}}>
+          
+          <View style={{width:350,height:550,borderWidth:2,borderRadius:10,marginTop:10,display:'flex'}}>
             {
               list.length?
               <View style={{padding:10}}>
@@ -86,14 +97,7 @@ function Home({navigation}): JSX.Element {
             }
           </View>
           <View style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
-              <TouchableOpacity style={styles.footer} onPress={()=>{addList(()=>{
-                if(input!=null)
-                {
-                  return [...list,input];
-                }
-                else
-                  return [];
-              })}}>  
+              <TouchableOpacity style={styles.footer} onPress={()=>{navigation.navigate('Input')}}>  
                 <View>
                   <Icon name="plus" size={60} color="lightblue" />
                 </View>
